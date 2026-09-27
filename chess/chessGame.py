@@ -8,12 +8,11 @@ ranks={'8':0,'7':1,'6':2,'5':3,'4':4,'3':5,'2':6,'1':7}
 Rfiles={0:'a',1:'b',2:'c',3:'d',4:'e',5:'f',6:'g',7:'h'}
 Rranks={0:'8',1:'7',2:'6',3:'5',4:'4',5:'3',6:'2',7:'1'}
 
-def draw_board(board_x,board_y) :
-    for i in range(len(squares)) :
-        x=i%8
-        y=i//8
-        screen.blit(squares[i],((x*cell_size)+board_x,(y*cell_size)+board_y))
 
+
+
+
+        
 class Piece :
     def __init__(self,color,piece,x,y):
         self.color=color
@@ -78,13 +77,19 @@ class Piece :
         if self.color=='white' :
             self.piece_code=self.piece_code.upper()
 
+
+
 class Button :
-    def __init__(self,x,y,img,w,h) :
+    def __init__(self,x,y,w,h,type,text = None,font_size = None,text_color = None,img = None) :
         self.x=x
         self.y=y
         self.w=w
         self.h=h
+        self.type = type
         self.img=img
+        self.text = text
+        self.font_size = font_size
+        self.text_color = text_color
         self.pressed=False
         self.button_bgRect=pygame.Rect(self.x,self.y,self.w,self.h)
 
@@ -94,10 +99,13 @@ class Button :
             b_color=hover_color
         else :
             b_color=bg_color
-        button_surface=self.img
-        button_rect=button_surface.get_rect(center=(self.button_bgRect.centerx,self.button_bgRect.centery))
-        pygame.draw.rect(screen,b_color,self.button_bgRect)
-        screen.blit(button_surface,button_rect)
+        if self.type == "img":
+            button_surface=self.img
+            button_rect=button_surface.get_rect(center=(self.button_bgRect.centerx,self.button_bgRect.centery))
+            pygame.draw.rect(screen,b_color,self.button_bgRect)
+            screen.blit(button_surface,button_rect)
+        elif self.type == "text":
+            drawTitle(self.font_size, self.x, self.y, self.w, self.h, b_color, self.text_color, self.text, "center", 0, 0)
 
     def is_clicked(self) :
         m_pos=pygame.mouse.get_pos()
@@ -108,13 +116,77 @@ class Button :
             return True
         return False
 
-def drawTitle(fontSize,x,y,bgW,bgH,bgColor,textColor,text) :
+
+
+class ask_draw_box:
+    def __init__(self):
+        self.width = 400
+        self.height = 50
+        self.x = 250
+        self.y = 0
+        self.offerer = None
+        self.button_y_off = 10
+        self.draw_offer_time = 0
+        
+
+    def ask_draw(self, color):
+        self.draw_offer_time = draw_time
+        self.offerer = color
+        if color == "white":
+            self.y = 895
+        else:
+            self.y = 15
+        self.accept_button = Button(415, self.y + self.button_y_off, 100, 30, type="text", text="Accept", text_color="#FFF1F1", font_size=24)
+        self.reject_button = Button(530, self.y + self.button_y_off, 100, 30, type="text", text="Reject", text_color="#F1FFF6", font_size=24)
+
+    def draw(self):
+        if self.offerer:
+            drawTitle(24, self.x, self.y, self.width, self.height, "#ffffff", "#333333", self.offerer + " would like to\noffer a draw", "left", 5, 0)
+            self.accept_button.drawButton("#E74646", "#FF8888")
+            self.reject_button.drawButton("#48D46B", "#9AFFA7")
+
+    def get_result(self):
+        if self.accept_button.is_clicked():
+            return True
+        elif self.reject_button.is_clicked():
+            return False
+        return "in_progress"
+
+
+
+
+
+def draw_board(board_x,board_y) :
+    for x in range(cell_number) :
+        for y in range(cell_number) :
+            if x%2==0 and y%2==0 :
+                cell_surf=pygame.Surface((cell_size,cell_size))
+                cell_surf.fill(("#eeeed2"))
+            elif x%2==0 and y%2!=0 :
+                cell_surf=pygame.Surface((cell_size,cell_size))
+                cell_surf.fill(("#769656"))
+            elif x%2!=0 and y%2==0 :
+                cell_surf=pygame.Surface((cell_size,cell_size))
+                cell_surf.fill(("#769656"))
+            elif x%2!=0 and y%2!=0 :
+                cell_surf=pygame.Surface((cell_size,cell_size))
+                cell_surf.fill(("#eeeed2"))
+            screen.blit(cell_surf,((x*cell_size)+board_x,(y*cell_size)+board_y))
+
+
+def drawTitle(fontSize,x,y,bgW,bgH,bgColor,textColor,text, text_pos, x_off, y_off) :
     titleFont=pygame.font.Font(None, fontSize)
     title_bgRect=pygame.Rect(x,y,bgW,bgH)
     title_surface=titleFont.render(text, True, textColor)
-    title_rect=title_surface.get_rect(center=(title_bgRect.center[0], title_bgRect[1]+30.5))
+    if text_pos == "center":
+        title_rect=title_surface.get_rect(center=(title_bgRect.center[0]+x_off, title_bgRect.center[1]+y_off))
+    elif text_pos == "left":
+        title_rect=title_surface.get_rect(midleft=(title_bgRect.midleft[0]+x_off, title_bgRect.midleft[1]+y_off))
+    elif text_pos == "right":
+            title_rect=title_surface.get_rect(midright=(title_bgRect.midright[0]+x_off, title_bgRect.midright[1]+y_off))
     pygame.draw.rect(screen,bgColor,title_bgRect)
     screen.blit(title_surface,title_rect)
+
 
 def set_board(fen) :
     board, turn, castling_rights, en_passant_sq, moves_since_pm_or_c, total_moves = fen_to_board(fen)
@@ -145,21 +217,26 @@ def set_board(fen) :
 
     return board, turn, en_passant_sq, moves_since_pm_or_c, total_moves, player_num, w_pieces, b_pieces
 
+
 def acn_to_xy(acn) :
     x=files[acn[0]]
     y=ranks[acn[1]]
     return x,y
 
+
 def acn_to_board_num(acn) :
     x,y=acn_to_xy(acn)
     b_num=xy_to_board_num(x,y)
     return b_num
+
+
 def board_num_to_acn(move) :
     x,y=board_num_to_xy(move)
     acn1=Rfiles[x]
     acn2=Rranks[y]
     acn=acn1+acn2
     return acn
+
 
 def fen_to_board(fen) :
     x,y=0,0
@@ -242,6 +319,7 @@ def fen_to_board(fen) :
 
     return board_grid, turn, castling_rights, en_passant, movesForDraw, t_moves
 
+
 def board_to_fen(board, turn, castling, en_passant, d_moves, t_moves) :
     fen=''
     empty=0
@@ -294,6 +372,7 @@ def board_to_fen(board, turn, castling, en_passant, d_moves, t_moves) :
 
     return fen
 
+
 def board_to_pieces(board) :
     white_p=[]
     black_p=[]
@@ -307,6 +386,7 @@ def board_to_pieces(board) :
 
     return white_p, black_p
 
+
 def pieces_to_board(pieces) :
     board=[['-' for _ in range(8)] for _ in range(8)]
     for piece in pieces :
@@ -314,13 +394,16 @@ def pieces_to_board(pieces) :
 
     return board
 
+
 def board_num_to_xy(board_num) :
     x=board_num%8
     y=board_num//8
     return x,y
 
+
 def xy_to_board_num(x,y) :
     return (y*8)+x
+
 
 def update_piece_pos(piece) :
     m_pos=pygame.mouse.get_pos()
@@ -329,10 +412,12 @@ def update_piece_pos(piece) :
         piece.piece_x=m_pos[0]
         piece.piece_y=m_pos[1]
 
+
 def highlight_legalMoves(legalMoves) :
     for square in legalMoves :
         square_pos=board_num_to_xy(square)
         screen.blit(highlighter,((square_pos[0]*cell_size)+board_x,(square_pos[1]*cell_size)+board_y))
+
 
 def get_piece_at(square, pieces):
     x, y = board_num_to_xy(square)
@@ -340,6 +425,7 @@ def get_piece_at(square, pieces):
         if p.x == x and p.y == y:
             return p
     return None
+
 
 def is_attacked(square, turn, w_pieces, b_pieces):
     rook_dirs = [-8, 8, -1, 1]
@@ -403,6 +489,7 @@ def is_attacked(square, turn, w_pieces, b_pieces):
                     return True
 
     return False
+
     
 def get_legalMoves(pieceToMove,turn) :
     legal_squares=[]
@@ -466,22 +553,6 @@ def get_legalMoves(pieceToMove,turn) :
             if en_passant_sq is not None:
                 if abs(en_passant_sq - pieceToMove.get_pos()) in (7, 9):
                     legal_squares.append(en_passant_sq)
-
-            filtered_moves=[]
-            for move in legal_squares :
-                temp_enemy_pieces=temp_Bpieces if pieceToMove.color=='white' else temp_Wpieces
-                temp_friendly_pieces=temp_Wpieces if pieceToMove.color=='white' else temp_Bpieces
-                piece=next(p for p in temp_friendly_pieces if p.x==pieceToMove.x and p.y==pieceToMove.y and p.color==pieceToMove.color and p.piece==pieceToMove.piece)
-                piece.x,piece.y=board_num_to_xy(move)
-                for a_piece in temp_enemy_pieces :
-                    if a_piece.x==piece.x and a_piece.y==piece.y :
-                        temp_enemy_pieces.remove(a_piece)
-                king = next(p for p in temp_friendly_pieces if p.piece == 'king')
-                king_sq = xy_to_board_num(king.x, king.y)
-                if not is_attacked(king_sq,turn,temp_Wpieces,temp_Bpieces) :
-                    filtered_moves.append(move)
-                temp_Wpieces,temp_Bpieces=copy.deepcopy(white_pieces),copy.deepcopy(black_pieces)
-            legal_squares=filtered_moves
 
         if pieceToMove.piece in ['rook','queen'] :
             enemy_on_square=False
@@ -577,22 +648,6 @@ def get_legalMoves(pieceToMove,turn) :
 
                 if enemy_on_square :
                     break
-
-            filtered_moves=[]
-            for move in legal_squares :
-                temp_enemy_pieces=temp_Bpieces if pieceToMove.color=='white' else temp_Wpieces
-                temp_friendly_pieces=temp_Wpieces if pieceToMove.color=='white' else temp_Bpieces
-                piece=next(p for p in temp_friendly_pieces if p.x==pieceToMove.x and p.y==pieceToMove.y and p.color==pieceToMove.color and p.piece==pieceToMove.piece)
-                piece.x,piece.y=board_num_to_xy(move)
-                for a_piece in temp_enemy_pieces :
-                    if a_piece.x==piece.x and a_piece.y==piece.y :
-                        temp_enemy_pieces.remove(a_piece)
-                king = next(p for p in temp_friendly_pieces if p.piece == 'king')
-                king_sq = xy_to_board_num(king.x, king.y)
-                if not is_attacked(king_sq,turn,temp_Wpieces,temp_Bpieces) :
-                    filtered_moves.append(move)
-                temp_Wpieces,temp_Bpieces=copy.deepcopy(white_pieces),copy.deepcopy(black_pieces)
-            legal_squares=filtered_moves
 
         if pieceToMove.piece in ['bishop','queen'] :
             enemy_on_square=False
@@ -696,22 +751,6 @@ def get_legalMoves(pieceToMove,turn) :
 
                 if enemy_on_square :
                     break
-
-            filtered_moves=[]
-            for move in legal_squares :
-                temp_enemy_pieces=temp_Bpieces if pieceToMove.color=='white' else temp_Wpieces
-                temp_friendly_pieces=temp_Wpieces if pieceToMove.color=='white' else temp_Bpieces
-                piece=next(p for p in temp_friendly_pieces if p.x==pieceToMove.x and p.y==pieceToMove.y and p.color==pieceToMove.color and p.piece==pieceToMove.piece)
-                piece.x,piece.y=board_num_to_xy(move)
-                for a_piece in temp_enemy_pieces :
-                    if a_piece.x==piece.x and a_piece.y==piece.y :
-                        temp_enemy_pieces.remove(a_piece)
-                king = next(p for p in temp_friendly_pieces if p.piece == 'king')
-                king_sq = xy_to_board_num(king.x, king.y)
-                if not is_attacked(king_sq,turn,temp_Wpieces,temp_Bpieces) :
-                    filtered_moves.append(move)
-                temp_Wpieces,temp_Bpieces=copy.deepcopy(white_pieces),copy.deepcopy(black_pieces)
-            legal_squares=filtered_moves
 
         if pieceToMove.piece=='king' :
             legal_move=pieceToMove.get_pos()-8
@@ -835,75 +874,36 @@ def get_legalMoves(pieceToMove,turn) :
                             if not piece_in_middle and not is_check :
                                 legal_squares.append(castling2)
 
-            filtered_moves=[]
-            for move in legal_squares :
-                temp_enemy_pieces=temp_Bpieces if pieceToMove.color=='white' else temp_Wpieces
-                temp_friendly_pieces=temp_Wpieces if pieceToMove.color=='white' else temp_Bpieces
-                piece=next(p for p in temp_friendly_pieces if p.x==pieceToMove.x and p.y==pieceToMove.y and p.color==pieceToMove.color and p.piece==pieceToMove.piece)
-                piece.x,piece.y=board_num_to_xy(move)
-                for a_piece in temp_enemy_pieces :
-                    if a_piece.x==piece.x and a_piece.y==piece.y :
-                        temp_enemy_pieces.remove(a_piece)
-                king = next(p for p in temp_friendly_pieces if p.piece == 'king')
-                king_sq = xy_to_board_num(king.x, king.y)
-                if not is_attacked(king_sq,turn,temp_Wpieces,temp_Bpieces) :
-                    filtered_moves.append(move)
-                temp_Wpieces,temp_Bpieces=copy.deepcopy(white_pieces),copy.deepcopy(black_pieces)
-            legal_squares=filtered_moves
+        if pieceToMove.piece == 'knight':
+            offsets = [-17, -15, -10, -6, 6, 10, 15, 17]
+            for off in offsets:
+                sq = pieceToMove.get_pos() + off
+                if 0 <= sq < 64:
+                    nx, ny = board_num_to_xy(sq)
+                    if abs(nx - pieceToMove.x) + abs(ny - pieceToMove.y) == 3:
+                        if not get_piece_at(sq, friendly_pieces):
+                            legal_squares.append(sq)
 
-        if pieceToMove.piece=='knight' :
-            for y in [8,-8] :
-                for x in [1,-1] :
-                    legal_move=pieceToMove.get_pos()+x+(2*y)
-                    friendly_on_square=False
-                    valid_move=False
-
-                    for piece in friendly_pieces :
-                        if piece.x==board_num_to_xy(legal_move)[0] and piece.y==board_num_to_xy(legal_move)[1] :
-                            friendly_on_square=True
-
-                    if legal_move%8 in range(pieceToMove.x-1,pieceToMove.x+2,2) :
-                        valid_move=True
-
-
-                    if not friendly_on_square and 0<=legal_move<=63 and valid_move :
-                        legal_squares.append(legal_move)
-
-            for x in [1,-1] :
-                for y in [8,-8] :
-                    legal_move=pieceToMove.get_pos()+(2*x)+y
-                    friendly_on_square=False
-                    valid_move=False
-
-                    for piece in friendly_pieces :
-                        if piece.x==board_num_to_xy(legal_move)[0] and piece.y==board_num_to_xy(legal_move)[1] :
-                            friendly_on_square=True
-
-                    if legal_move//8 in range(pieceToMove.y-1,pieceToMove.y+2,2) :
-                        valid_move=True
-
-                    if not friendly_on_square and 0<=legal_move<=63 and valid_move :
-                        legal_squares.append(legal_move)
-
-            filtered_moves=[]
-            for move in legal_squares :
-                temp_enemy_pieces=temp_Bpieces if pieceToMove.color=='white' else temp_Wpieces
-                temp_friendly_pieces=temp_Wpieces if pieceToMove.color=='white' else temp_Bpieces
-                piece=next(p for p in temp_friendly_pieces if p.x==pieceToMove.x and p.y==pieceToMove.y and p.color==pieceToMove.color and p.piece==pieceToMove.piece)
-                piece.x,piece.y=board_num_to_xy(move)
-                for a_piece in temp_enemy_pieces :
-                    if a_piece.x==piece.x and a_piece.y==piece.y :
-                        temp_enemy_pieces.remove(a_piece)
-                king = next(p for p in temp_friendly_pieces if p.piece == 'king')
-                king_sq = xy_to_board_num(king.x, king.y)
-                if not is_attacked(king_sq,turn,temp_Wpieces,temp_Bpieces) :
-                    filtered_moves.append(move)
-                temp_Wpieces,temp_Bpieces=copy.deepcopy(white_pieces),copy.deepcopy(black_pieces)
-            legal_squares=filtered_moves
+        filtered_moves=[]
+        for move in legal_squares :
+            temp_enemy_pieces=temp_Bpieces if pieceToMove.color=='white' else temp_Wpieces
+            temp_friendly_pieces=temp_Wpieces if pieceToMove.color=='white' else temp_Bpieces
+            piece=next(p for p in temp_friendly_pieces if p.x==pieceToMove.x and p.y==pieceToMove.y and p.color==pieceToMove.color and p.piece==pieceToMove.piece)
+            piece.x,piece.y=board_num_to_xy(move)
+            for a_piece in temp_enemy_pieces :
+                if a_piece.x==piece.x and a_piece.y==piece.y :
+                    temp_enemy_pieces.remove(a_piece)
+            king = next(p for p in temp_friendly_pieces if p.piece == 'king')
+            king_sq = xy_to_board_num(king.x, king.y)
+            if not is_attacked(king_sq,turn,temp_Wpieces,temp_Bpieces) :
+                filtered_moves.append(move)
+            temp_Wpieces,temp_Bpieces=copy.deepcopy(white_pieces),copy.deepcopy(black_pieces)
+        legal_squares=filtered_moves
 
     return legal_squares
 
-def is_game_end(turn,b_pieces,w_pieces,time,is_Bresign, is_Wresign, all_positions) :
+
+def is_game_end(turn,b_pieces,w_pieces,time,is_Bresign, is_Wresign, all_positions, is_draw) :
     friendly_pieces=w_pieces if turn=='white' else b_pieces
     is_position_repeated_three_times = False
     position_frequency = {}
@@ -918,7 +918,7 @@ def is_game_end(turn,b_pieces,w_pieces,time,is_Bresign, is_Wresign, all_position
     if 3 in list(position_frequency.values()) :
         is_position_repeated_three_times = True
 
-    if len(b_pieces+w_pieces)==2 or moves_since_pm_or_c>=50 or is_position_repeated_three_times :
+    if len(b_pieces+w_pieces)==2 or moves_since_pm_or_c>=50 or is_position_repeated_three_times or is_draw == True :
         return 'draw'
     
     if time<=0 :
@@ -941,6 +941,7 @@ def is_game_end(turn,b_pieces,w_pieces,time,is_Bresign, is_Wresign, all_position
         return 'checkmate'
     else :
         return 'stalemate'
+
     
 def get_bot_input(uci,pieces) :
     startX=files[uci[0]]
@@ -954,6 +955,9 @@ def get_bot_input(uci,pieces) :
             return piece, startX, startY, startPos, endX, endY, endPos
     return None,None,None,None,None,None,None
     
+
+
+
 
 cell_size=100
 cell_number=8
@@ -990,14 +994,20 @@ time_increment=play_time_increment
 is_Wresign=False
 is_Bresign=False
 positions=["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"]
+draw_asked = False
+draw_result = False
+draw_time = 30
 
 white='user'
-black='bot'
+black='user'
+
+my_bot=chessBot.ChessAI()
+bot1_color='white' if white=='bot' else None
+bot2_color='black' if black=='bot' else None
 
 white_pieces=[Piece('white','king',4,7),Piece('white','queen',3,7),Piece('white','bishop',2,7),Piece('white','bishop',5,7),Piece('white','knight',1,7),Piece('white','knight',6,7),Piece('white','rook',0,7),Piece('white','rook',7,7),Piece('white','pawn',0,6),Piece('white','pawn',1,6),Piece('white','pawn',2,6),Piece('white','pawn',3,6),Piece('white','pawn',4,6),Piece('white','pawn',5,6),Piece('white','pawn',6,6),Piece('white','pawn',7,6)]
 black_pieces=[Piece('black','king',4,0),Piece('black','queen',3,0),Piece('black','bishop',2,0),Piece('black','bishop',5,0),Piece('black','knight',1,0),Piece('black','knight',6,0),Piece('black','rook',0,0),Piece('black','rook',7,0),Piece('black','pawn',0,1),Piece('black','pawn',1,1),Piece('black','pawn',2,1),Piece('black','pawn',3,1),Piece('black','pawn',4,1),Piece('black','pawn',5,1),Piece('black','pawn',6,1),Piece('black','pawn',7,1)]
 start_fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-
 board, turn, en_passant_sq, moves_since_pm_or_c, total_moves, player_num, white_pieces, black_pieces = set_board(start_fen)
 
 for y in range(len(board)) :
@@ -1005,27 +1015,10 @@ for y in range(len(board)) :
         code=x.piece_code if x!='-' else '-'
         print(code,end=' ')
     print()
-for x in range(cell_number) :
-        if x%2==0 :
-            for y in range(cell_number) :
-                if y%2!=0 :
-                    cell_surf=pygame.Surface((cell_size,cell_size))
-                    cell_surf.fill(("#769656"))
-                    squares.append(cell_surf)
-                else :
-                    cell_surf=pygame.Surface((cell_size,cell_size))
-                    cell_surf.fill(("#eeeed2"))
-                    squares.append(cell_surf)
-        else :
-            for y in range(cell_number) :
-                if y%2==0 :
-                    cell_surf=pygame.Surface((cell_size,cell_size))
-                    cell_surf.fill(("#769656"))
-                    squares.append(cell_surf)
-                else :
-                    cell_surf=pygame.Surface((cell_size,cell_size))
-                    cell_surf.fill(("#eeeed2"))
-                    squares.append(cell_surf)
+
+
+
+
 
 pygame.init()
 screen=pygame.display.set_mode((grid_size,grid_size))
@@ -1078,20 +1071,22 @@ play=pygame.USEREVENT + 3
 pygame.time.set_timer(play, 150)
 player_clock=pygame.USEREVENT + 4
 pygame.time.set_timer(player_clock, 1000)
-draw_offer_bg = pygame.Surface((300, 100))
-draw_offer_bg.fill('#ffffff')
+draw_clock=pygame.USEREVENT + 5
+pygame.time.set_timer(draw_clock, 1000)
 
-my_bot=chessBot.ChessAI()
+undo_move_bt=Button(850, 705, 85, 175, type="img", img=undo_move_img)
+restart_bt=Button(850, 497, 85, 175, type="img", img=restart_img)
+resign_bt=Button(850, 289, 85, 175, type="img", img=resign_img)
+draw_bt=Button(850, 81, 85, 175, type="img", img=white_pawn)
 
-undo_move_bt=Button(850, 705, undo_move_img, 85, 175)
-restart_bt=Button(850, 497, restart_img, 85, 175)
-resign_bt=Button(850, 289, resign_img, 85, 175)
+offer_draw_box = ask_draw_box()
+
+
+
+
 
 game_start_sound.play()
 while True :
-    bot1_color='white' if white=='bot' else None
-    bot2_color='black' if black=='bot' else None
-    draw_selection_panel=False
     for event in pygame.event.get() :
         if event.type==pygame.QUIT :
             pygame.quit()
@@ -1100,8 +1095,6 @@ while True :
         if not game_end :
             if promotion_active :
                 if event.type==pygame.MOUSEBUTTONUP :
-                    selected=True
-                    promoted=False
                     promotion_active=False
                     if queen_rect.collidepoint(event.pos) :
                         selected_piece.piece='queen'
@@ -1112,8 +1105,6 @@ while True :
                     elif bishop_rect.collidepoint(event.pos) :
                         selected_piece.piece='bishop'
                     else :
-                        promoted=True
-                        selected=False
                         promotion_active=True
                     selected_piece.update_info()
             else :
@@ -1122,7 +1113,6 @@ while True :
                         if piece.piece_rect.collidepoint(event.pos) :
                             selected_piece=piece
                             legal_moves=get_legalMoves(selected_piece,turn)
-                            highlight_legalMoves(legal_moves)
                             break
 
                 if event.type == pygame.MOUSEBUTTONUP and selected_piece:
@@ -1204,6 +1194,9 @@ while True :
                         white_time-=1
                     elif turn=='black' :
                         black_time-=1
+
+                if event.type==draw_clock:
+                    offer_draw_box.draw_offer_time-=1
 
                 if event.type==move_piece and selected_piece :
                     friendly=white_pieces if selected_piece.color == "white" else black_pieces
@@ -1305,13 +1298,9 @@ while True :
                     if selected_piece.piece == 'pawn' and selected_piece.y in (0, 7):
                         if (selected_piece.color == 'white' and white == 'user') or (selected_piece.color == 'black' and black == 'user'):
                             promotion_active=True
-                            draw_selection_panel=True
-                            promoted=True
                         else:
                             selected_piece.piece=my_bot.get_promoted_piece()
                             selected_piece.update_info()
-                            promoted = True
-                            selected_piece = None
                             promote_sound.play()
 
                     else:
@@ -1341,28 +1330,46 @@ while True :
                     if start_pos!=end_pos :
                         moved.play()
 
-                    p_time=white_time if turn=='white' else black_time
-                    game_end_state=is_game_end(turn,black_pieces,white_pieces,p_time,is_Bresign,is_Wresign,positions)
-                    if game_end_state=='checkmate' :
-                        game_end_sound.play()
-                        print('%s won by checkmate' %(player[(player_num+1)%2]))
-                        game_end=True
-                    elif game_end_state=='time' :
-                        print('%s won by time' %(player[(player_num+1)%2]))
-                        game_end=True
-                    elif game_end_state=='stalemate' :
-                        print("Stalemate!")
-                        game_end=True
-                    elif game_end_state=='draw' :
-                        print("It's a draw")
-                        game_end=True
-                    elif game_end_state=='w_win' :
-                        print("Black resigned.\nWhite won!")
-                        game_end=True
-                    elif game_end_state=='b_win' :
-                        print("White resigned.\nBlack won!")
-                        game_end=True
-    
+    p_time=white_time if turn=='white' else black_time
+    game_end_state=is_game_end(turn,black_pieces,white_pieces,p_time,is_Bresign,is_Wresign,positions, draw_result)
+    if not game_end :
+        if game_end_state=='checkmate' :
+            game_end_sound.play()
+            print('%s won by checkmate' %(player[(player_num+1)%2]))
+            game_end=True
+        elif game_end_state=='time' :
+            print('%s won by time' %(player[(player_num+1)%2]))
+            game_end=True
+        elif game_end_state=='stalemate' :
+            print("Stalemate!")
+            game_end=True
+        elif game_end_state=='draw' :
+            print("It's a draw")
+            game_end=True
+        elif game_end_state=='w_win' :
+            print("Black resigned.\nWhite won!")
+            game_end=True
+        elif game_end_state=='b_win' :
+            print("White resigned.\nBlack won!")
+            game_end=True
+
+    screen.fill("#474747")
+    draw_board(board_x,board_y)
+    for piece in white_pieces + black_pieces:
+        piece.draw_piece()
+    if selected_piece and not((turn=='white' and white=='bot') or (turn=='black' and black=='bot')) :
+        legal_moves=get_legalMoves(selected_piece,turn)
+        highlight_legalMoves(legal_moves)
+        update_piece_pos(selected_piece)
+    w_time_sep=':' if len(str(white_time%60))==2 else ':0'
+    b_time_sep=':' if len(str(black_time%60))==2 else ':0'
+    drawTitle(84, 25, 895, 200, 50, '#ffffff', '#000000', str(white_time//60)+w_time_sep+str(white_time%60), "center", 0, 4)
+    drawTitle(84, 25, 15, 200, 50, '#ffffff', '#000000', str(black_time//60)+b_time_sep+str(black_time%60), "center", 0, 4)
+    undo_move_bt.drawButton("#707070", "#616161")
+    restart_bt.drawButton("#707070", "#616161")
+    resign_bt.drawButton("#707070", "#616161")
+    draw_bt.drawButton("#707070", "#616161")
+
     if promotion_active :
         panel_x=selected_piece.piece_x
         panel_y=selected_piece.piece_y-(cell_size/2) if selected_piece.color=='white' else selected_piece.piece_y-(cell_size*3)-(cell_size/2)
@@ -1371,25 +1378,24 @@ while True :
         selection_panel_bg_rect=selection_panel_bg_surf.get_rect(midtop=(panel_x, panel_y))
 
         queen_x=selected_piece.piece_x
-        queen_y=selected_piece.piece_y-(cell_size/2) if selected_piece.color=='white' else selected_piece.piece_y-(cell_size*3)-(cell_size/2)
+        queen_y=selected_piece.piece_y if selected_piece.color=='white' else selected_piece.piece_y-(cell_size*3)
         queen_surf=white_queen if selected_piece.color=='white' else black_queen
-        queen_rect=queen_surf.get_rect(midtop=(queen_x, queen_y))
+        queen_rect=queen_surf.get_rect(center=(queen_x, queen_y))
 
         rook_x=selected_piece.piece_x
-        rook_y=selected_piece.piece_y-(cell_size/2)+(cell_size) if selected_piece.color=='white' else selected_piece.piece_y-(cell_size*3)-(cell_size/2)+(cell_size)
+        rook_y=selected_piece.piece_y+(cell_size) if selected_piece.color=='white' else selected_piece.piece_y-(cell_size*2)
         rook_surf=white_rook if selected_piece.color=='white' else black_rook
-        rook_rect=rook_surf.get_rect(midtop=(rook_x, rook_y))
+        rook_rect=rook_surf.get_rect(center=(rook_x, rook_y))
 
         knight_x=selected_piece.piece_x
-        knight_y=selected_piece.piece_y-(cell_size/2)+(cell_size*2) if selected_piece.color=='white' else selected_piece.piece_y-(cell_size*3)-(cell_size/2)+(cell_size*2)
+        knight_y=selected_piece.piece_y+(cell_size*2) if selected_piece.color=='white' else selected_piece.piece_y-(cell_size)
         knight_surf=white_knight if selected_piece.color=='white' else black_knight
-        knight_rect=knight_surf.get_rect(midtop=(knight_x, knight_y))
+        knight_rect=knight_surf.get_rect(center=(knight_x, knight_y))
 
         bishop_x=selected_piece.piece_x
-        bishop_y=selected_piece.piece_y-(cell_size/2)+(cell_size*3) if selected_piece.color=='white' else selected_piece.piece_y-(cell_size*3)-(cell_size/2)+(cell_size*3)
+        bishop_y=selected_piece.piece_y+(cell_size*3) if selected_piece.color=='white' else selected_piece.piece_y
         bishop_surf=white_bishop if selected_piece.color=='white' else black_bishop
-        bishop_rect=bishop_surf.get_rect(midtop=(bishop_x, bishop_y))
-        selected=False
+        bishop_rect=bishop_surf.get_rect(center=(bishop_x, bishop_y))
         
         screen.blit(selection_panel_bg_surf, selection_panel_bg_rect)
         screen.blit(queen_surf, queen_rect)
@@ -1397,79 +1403,72 @@ while True :
         screen.blit(knight_surf, knight_rect)
         screen.blit(bishop_surf, bishop_rect)
         pygame.display.update()
-        if selected :
-            promotion_active=False
 
-    else :
-        screen.fill("#474747")
-        draw_board(board_x,board_y)
-
+    if restart_bt.is_clicked() :
+        white_time=white_play_time
+        black_time=black_play_time
+        time_increment=play_time_increment
+        is_Wresign=False
+        is_Bresign=False
+        game_end=False
+        positions=["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"]
+        white_pieces=[Piece('white','king',4,7),Piece('white','queen',3,7),Piece('white','bishop',2,7),Piece('white','bishop',5,7),Piece('white','knight',1,7),Piece('white','knight',6,7),Piece('white','rook',0,7),Piece('white','rook',7,7),Piece('white','pawn',0,6),Piece('white','pawn',1,6),Piece('white','pawn',2,6),Piece('white','pawn',3,6),Piece('white','pawn',4,6),Piece('white','pawn',5,6),Piece('white','pawn',6,6),Piece('white','pawn',7,6)]
+        black_pieces=[Piece('black','king',4,0),Piece('black','queen',3,0),Piece('black','bishop',2,0),Piece('black','bishop',5,0),Piece('black','knight',1,0),Piece('black','knight',6,0),Piece('black','rook',0,0),Piece('black','rook',7,0),Piece('black','pawn',0,1),Piece('black','pawn',1,1),Piece('black','pawn',2,1),Piece('black','pawn',3,1),Piece('black','pawn',4,1),Piece('black','pawn',5,1),Piece('black','pawn',6,1),Piece('black','pawn',7,1)]
         for piece in white_pieces + black_pieces:
             piece.draw_piece()
 
-        if selected_piece and not((turn=='white' and white=='bot') or (turn=='black' and black=='bot')) :
-            legal_moves=get_legalMoves(selected_piece,turn)
-            highlight_legalMoves(legal_moves)
-            update_piece_pos(selected_piece)
-        w_time_sep=':' if len(str(white_time%60))==2 else ':0'
-        b_time_sep=':' if len(str(black_time%60))==2 else ':0'
-        drawTitle(84, 25, 895, 200, 50, '#ffffff', '#000000', str(white_time//60)+w_time_sep+str(white_time%60))
-        drawTitle(84, 25, 15, 200, 50, '#ffffff', '#000000', str(black_time//60)+b_time_sep+str(black_time%60))
-        undo_move_bt.drawButton("#707070", "#616161")
-        restart_bt.drawButton("#707070", "#616161")
-        resign_bt.drawButton("#707070", "#616161")
+        board, turn, castling_rights, en_passant_sq, moves_since_pm_or_c, total_moves=fen_to_board(start_fen)
 
-        if restart_bt.is_clicked() :
-            white_time=white_play_time
-            black_time=black_play_time
-            time_increment=play_time_increment
-            is_Wresign=False
-            is_Bresign=False
-            game_end=False
-            positions=["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"]
-            white_pieces=[Piece('white','king',4,7),Piece('white','queen',3,7),Piece('white','bishop',2,7),Piece('white','bishop',5,7),Piece('white','knight',1,7),Piece('white','knight',6,7),Piece('white','rook',0,7),Piece('white','rook',7,7),Piece('white','pawn',0,6),Piece('white','pawn',1,6),Piece('white','pawn',2,6),Piece('white','pawn',3,6),Piece('white','pawn',4,6),Piece('white','pawn',5,6),Piece('white','pawn',6,6),Piece('white','pawn',7,6)]
-            black_pieces=[Piece('black','king',4,0),Piece('black','queen',3,0),Piece('black','bishop',2,0),Piece('black','bishop',5,0),Piece('black','knight',1,0),Piece('black','knight',6,0),Piece('black','rook',0,0),Piece('black','rook',7,0),Piece('black','pawn',0,1),Piece('black','pawn',1,1),Piece('black','pawn',2,1),Piece('black','pawn',3,1),Piece('black','pawn',4,1),Piece('black','pawn',5,1),Piece('black','pawn',6,1),Piece('black','pawn',7,1)]
-            for piece in white_pieces + black_pieces:
-                piece.draw_piece()
-            start_fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        if turn=='white' :
+            player_num=0
+        else :
+            player_num=1
+    
+        if castling_rights!=None :
+            for piece in black_pieces+white_pieces :
+                if piece.piece=='rook' :
+                    if piece.start_x==7 and piece.color == "white" :
+                        piece.can_castle=castling_rights[0]
+                    elif piece.start_x==0 and piece.color == "white" :
+                        piece.can_castle=castling_rights[1]
+                    elif piece.start_x==7 and piece.color == "black" :
+                        piece.can_castle=castling_rights[2]
+                    elif piece.start_x==0 and piece.color == "black" :
+                        piece.can_castle=castling_rights[3]
+                if piece.piece=='king' :
+                    piece.can_castle=True
+        else :
+            for rook in black_pieces+white_pieces :
+                if rook.piece in ['rook','king'] :
+                    rook.can_castle=False
+        promotion_active = False
+        draw_asked = False
+        draw_result = False
+        game_start_sound.play()
+    
+    if resign_bt.is_clicked() :
+        if turn=='black' :
+            is_Wresign=True
+        else  :
+            is_Bresign=True
 
-            board, turn, castling_rights, en_passant_sq, moves_since_pm_or_c, total_moves=fen_to_board(start_fen)
-
-            if turn=='white' :
-                player_num=0
-            else :
-                player_num=1
-
-            if castling_rights!=None :
-                for piece in black_pieces+white_pieces :
-                    if piece.piece=='piece' :
-                        if piece.start_x==7 and piece.start_y==7 :
-                            piece.can_castle=castling_rights[0]
-                        elif piece.start_x==0 and piece.start_y==7 :
-                            piece.can_castle=castling_rights[1]
-                        elif piece.start_x==7 and piece.start_y==0 :
-                            piece.can_castle=castling_rights[2]
-                        elif piece.start_x==0 and piece.start_y==0 :
-                            piece.can_castle=castling_rights[3]
-                    if piece.piece=='king' :
-                        piece.can_castle=True
-            else :
-                for rook in black_pieces+white_pieces :
-                    if rook.piece in ['rook','king'] :
-                        rook.can_castle=False
-
-        if resign_bt.is_clicked() :
-            if turn=='black' :
-                is_Wresign=True
-            else  :
-                is_Bresign=True
-
-        if undo_move_bt.is_clicked() :
+    if undo_move_bt.is_clicked() and not game_end :
+        for _ in range(2) :
             if len(positions) >= 2 :
                 board, turn, en_passant_sq, moves_since_pm_or_c, total_moves, player_num, white_pieces, black_pieces = set_board(positions[-2])
                 positions.pop(-1)
-            for piece in white_pieces + black_pieces :
-                piece.update_piece_pixel_pos()
+        for piece in white_pieces + black_pieces :
+            piece.update_piece_pixel_pos()
 
+    if draw_bt.is_clicked() and not game_end :
+        offer_draw_box.ask_draw(turn)
+        draw_asked = True
+
+    if draw_asked:
+        offer_draw_box.draw()
+        draw_result = offer_draw_box.get_result()
+        if draw_result != "in_progress" or offer_draw_box.draw_offer_time <= 0:
+            draw_asked = False
+        
     pygame.display.update()
     clock.tick(60)
