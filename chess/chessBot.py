@@ -221,7 +221,7 @@ def is_attacked(square, turn, w_pieces, b_pieces):
 
     return False
     
-def get_legalMoves(pieceToMove,turn, white_pieces, black_pieces,en_passant_sq) :
+def get_legalMoves(pieceToMove,turn, white_pieces, black_pieces, en_passant_sq) :
     legal_squares=[]
     if turn in [pieceToMove.color,'test'] :
         enemy_pieces=black_pieces if pieceToMove.color=='white' else white_pieces
@@ -283,22 +283,6 @@ def get_legalMoves(pieceToMove,turn, white_pieces, black_pieces,en_passant_sq) :
             if en_passant_sq is not None:
                 if abs(en_passant_sq - pieceToMove.get_pos()) in (7, 9):
                     legal_squares.append(en_passant_sq)
-
-            filtered_moves=[]
-            for move in legal_squares :
-                temp_enemy_pieces=temp_Bpieces if pieceToMove.color=='white' else temp_Wpieces
-                temp_friendly_pieces=temp_Wpieces if pieceToMove.color=='white' else temp_Bpieces
-                piece=next(p for p in temp_friendly_pieces if p.x==pieceToMove.x and p.y==pieceToMove.y and p.color==pieceToMove.color and p.piece==pieceToMove.piece)
-                piece.x,piece.y=board_num_to_xy(move)
-                for a_piece in temp_enemy_pieces :
-                    if a_piece.x==piece.x and a_piece.y==piece.y :
-                        temp_enemy_pieces.remove(a_piece)
-                king = next(p for p in temp_friendly_pieces if p.piece == 'king')
-                king_sq = xy_to_board_num(king.x, king.y)
-                if not is_attacked(king_sq,turn,temp_Wpieces,temp_Bpieces) :
-                    filtered_moves.append(move)
-                temp_Wpieces,temp_Bpieces=copy.deepcopy(white_pieces),copy.deepcopy(black_pieces)
-            legal_squares=filtered_moves
 
         if pieceToMove.piece in ['rook','queen'] :
             enemy_on_square=False
@@ -394,22 +378,6 @@ def get_legalMoves(pieceToMove,turn, white_pieces, black_pieces,en_passant_sq) :
 
                 if enemy_on_square :
                     break
-
-            filtered_moves=[]
-            for move in legal_squares :
-                temp_enemy_pieces=temp_Bpieces if pieceToMove.color=='white' else temp_Wpieces
-                temp_friendly_pieces=temp_Wpieces if pieceToMove.color=='white' else temp_Bpieces
-                piece=next(p for p in temp_friendly_pieces if p.x==pieceToMove.x and p.y==pieceToMove.y and p.color==pieceToMove.color and p.piece==pieceToMove.piece)
-                piece.x,piece.y=board_num_to_xy(move)
-                for a_piece in temp_enemy_pieces :
-                    if a_piece.x==piece.x and a_piece.y==piece.y :
-                        temp_enemy_pieces.remove(a_piece)
-                king = next(p for p in temp_friendly_pieces if p.piece == 'king')
-                king_sq = xy_to_board_num(king.x, king.y)
-                if not is_attacked(king_sq,turn,temp_Wpieces,temp_Bpieces) :
-                    filtered_moves.append(move)
-                temp_Wpieces,temp_Bpieces=copy.deepcopy(white_pieces),copy.deepcopy(black_pieces)
-            legal_squares=filtered_moves
 
         if pieceToMove.piece in ['bishop','queen'] :
             enemy_on_square=False
@@ -513,22 +481,6 @@ def get_legalMoves(pieceToMove,turn, white_pieces, black_pieces,en_passant_sq) :
 
                 if enemy_on_square :
                     break
-
-            filtered_moves=[]
-            for move in legal_squares :
-                temp_enemy_pieces=temp_Bpieces if pieceToMove.color=='white' else temp_Wpieces
-                temp_friendly_pieces=temp_Wpieces if pieceToMove.color=='white' else temp_Bpieces
-                piece=next(p for p in temp_friendly_pieces if p.x==pieceToMove.x and p.y==pieceToMove.y and p.color==pieceToMove.color and p.piece==pieceToMove.piece)
-                piece.x,piece.y=board_num_to_xy(move)
-                for a_piece in temp_enemy_pieces :
-                    if a_piece.x==piece.x and a_piece.y==piece.y :
-                        temp_enemy_pieces.remove(a_piece)
-                king = next(p for p in temp_friendly_pieces if p.piece == 'king')
-                king_sq = xy_to_board_num(king.x, king.y)
-                if not is_attacked(king_sq,turn,temp_Wpieces,temp_Bpieces) :
-                    filtered_moves.append(move)
-                temp_Wpieces,temp_Bpieces=copy.deepcopy(white_pieces),copy.deepcopy(black_pieces)
-            legal_squares=filtered_moves
 
         if pieceToMove.piece=='king' :
             legal_move=pieceToMove.get_pos()-8
@@ -652,71 +604,31 @@ def get_legalMoves(pieceToMove,turn, white_pieces, black_pieces,en_passant_sq) :
                             if not piece_in_middle and not is_check :
                                 legal_squares.append(castling2)
 
-            filtered_moves=[]
-            for move in legal_squares :
-                temp_enemy_pieces=temp_Bpieces if pieceToMove.color=='white' else temp_Wpieces
-                temp_friendly_pieces=temp_Wpieces if pieceToMove.color=='white' else temp_Bpieces
-                piece=next(p for p in temp_friendly_pieces if p.x==pieceToMove.x and p.y==pieceToMove.y and p.color==pieceToMove.color and p.piece==pieceToMove.piece)
-                piece.x,piece.y=board_num_to_xy(move)
-                for a_piece in temp_enemy_pieces :
-                    if a_piece.x==piece.x and a_piece.y==piece.y :
-                        temp_enemy_pieces.remove(a_piece)
-                king = next(p for p in temp_friendly_pieces if p.piece == 'king')
-                king_sq = xy_to_board_num(king.x, king.y)
-                if not is_attacked(king_sq,turn,temp_Wpieces,temp_Bpieces) :
-                    filtered_moves.append(move)
-                temp_Wpieces,temp_Bpieces=copy.deepcopy(white_pieces),copy.deepcopy(black_pieces)
-            legal_squares=filtered_moves
+        if pieceToMove.piece == 'knight':
+            offsets = [-17, -15, -10, -6, 6, 10, 15, 17]
+            for off in offsets:
+                sq = pieceToMove.get_pos() + off
+                if 0 <= sq < 64:
+                    nx, ny = board_num_to_xy(sq)
+                    if abs(nx - pieceToMove.x) + abs(ny - pieceToMove.y) == 3:
+                        if not get_piece_at(sq, friendly_pieces):
+                            legal_squares.append(sq)
 
-        if pieceToMove.piece=='knight' :
-            for y in [8,-8] :
-                for x in [1,-1] :
-                    legal_move=pieceToMove.get_pos()+x+(2*y)
-                    friendly_on_square=False
-                    valid_move=False
-
-                    for piece in friendly_pieces :
-                        if piece.x==board_num_to_xy(legal_move)[0] and piece.y==board_num_to_xy(legal_move)[1] :
-                            friendly_on_square=True
-
-                    if legal_move%8 in range(pieceToMove.x-1,pieceToMove.x+2,2) :
-                        valid_move=True
-
-
-                    if not friendly_on_square and 0<=legal_move<=63 and valid_move :
-                        legal_squares.append(legal_move)
-
-            for x in [1,-1] :
-                for y in [8,-8] :
-                    legal_move=pieceToMove.get_pos()+(2*x)+y
-                    friendly_on_square=False
-                    valid_move=False
-
-                    for piece in friendly_pieces :
-                        if piece.x==board_num_to_xy(legal_move)[0] and piece.y==board_num_to_xy(legal_move)[1] :
-                            friendly_on_square=True
-
-                    if legal_move//8 in range(pieceToMove.y-1,pieceToMove.y+2,2) :
-                        valid_move=True
-
-                    if not friendly_on_square and 0<=legal_move<=63 and valid_move :
-                        legal_squares.append(legal_move)
-
-            filtered_moves=[]
-            for move in legal_squares :
-                temp_enemy_pieces=temp_Bpieces if pieceToMove.color=='white' else temp_Wpieces
-                temp_friendly_pieces=temp_Wpieces if pieceToMove.color=='white' else temp_Bpieces
-                piece=next(p for p in temp_friendly_pieces if p.x==pieceToMove.x and p.y==pieceToMove.y and p.color==pieceToMove.color and p.piece==pieceToMove.piece)
-                piece.x,piece.y=board_num_to_xy(move)
-                for a_piece in temp_enemy_pieces :
-                    if a_piece.x==piece.x and a_piece.y==piece.y :
-                        temp_enemy_pieces.remove(a_piece)
-                king = next(p for p in temp_friendly_pieces if p.piece == 'king')
-                king_sq = xy_to_board_num(king.x, king.y)
-                if not is_attacked(king_sq,turn,temp_Wpieces,temp_Bpieces) :
-                    filtered_moves.append(move)
-                temp_Wpieces,temp_Bpieces=copy.deepcopy(white_pieces),copy.deepcopy(black_pieces)
-            legal_squares=filtered_moves
+        filtered_moves=[]
+        for move in legal_squares :
+            temp_enemy_pieces=temp_Bpieces if pieceToMove.color=='white' else temp_Wpieces
+            temp_friendly_pieces=temp_Wpieces if pieceToMove.color=='white' else temp_Bpieces
+            piece=next(p for p in temp_friendly_pieces if p.x==pieceToMove.x and p.y==pieceToMove.y and p.color==pieceToMove.color and p.piece==pieceToMove.piece)
+            piece.x,piece.y=board_num_to_xy(move)
+            for a_piece in temp_enemy_pieces :
+                if a_piece.x==piece.x and a_piece.y==piece.y :
+                    temp_enemy_pieces.remove(a_piece)
+            king = next(p for p in temp_friendly_pieces if p.piece == 'king')
+            king_sq = xy_to_board_num(king.x, king.y)
+            if not is_attacked(king_sq,turn,temp_Wpieces,temp_Bpieces) :
+                filtered_moves.append(move)
+            temp_Wpieces,temp_Bpieces=copy.deepcopy(white_pieces),copy.deepcopy(black_pieces)
+        legal_squares=filtered_moves
 
     return legal_squares
 
